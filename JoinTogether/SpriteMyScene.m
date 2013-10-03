@@ -13,7 +13,8 @@
 @end
 
 static const uint32_t rockCategory        =  0x1 << 0;
-static const uint32_t shipCategory        =  0x1 << 1;
+static const uint32_t stuckCategory        =  0x1 << 1;
+static const uint32_t shipCategory        =  0x1 << 2;
 
 
 
@@ -44,27 +45,25 @@ static const uint32_t shipCategory        =  0x1 << 1;
 
 
 
--(SKSpriteNode *)word2 {
-    SKSpriteNode *testNode = [[SKSpriteNode alloc] init];//parent
+-(SKLabelNode *)word2 {
     SKLabelNode *hello = [SKLabelNode labelNodeWithFontNamed:@"Courier-Bold"];
-    [testNode addChild:hello];
-    testNode.name= @"world";
+    hello.name= @"world";
     hello.text = @"World!";
     hello.fontSize = 20;
-    testNode.position = CGPointMake(CGRectGetMidX(self.frame),
+    hello.position = CGPointMake(CGRectGetMidX(self.frame),
                                  CGRectGetMidY(self.frame)-200);
-    testNode.physicsBody = [SKPhysicsBody bodyWithRectangleOfSize:hello.frame.size];
-    testNode.physicsBody.dynamic = NO;
-    testNode.physicsBody.contactTestBitMask = rockCategory;
-    testNode.physicsBody.categoryBitMask = shipCategory;
+    hello.physicsBody = [SKPhysicsBody bodyWithRectangleOfSize:CGSizeMake(hello.frame.size.width+30,hello.frame.size.height+50)];
+    hello.physicsBody.dynamic = NO;
+    hello.physicsBody.contactTestBitMask = rockCategory;
+    hello.physicsBody.categoryBitMask = shipCategory;
 
 
 //    testNode.anchorPoint = CGPointMake(0.5,0.0);
     SKAction *getintoposition = [SKAction sequence:@[
                                                      [SKAction rotateToAngle:(M_PI/2) duration:1]]];
-    [testNode runAction: getintoposition];
+    [hello runAction: getintoposition];
 
-    return testNode;
+    return hello;
     
 }
 
@@ -81,26 +80,40 @@ static inline CGFloat rndValue(CGFloat low, CGFloat high) {
     return skRandf() * (high - low) + low;
 }
 
+NSString *letters = @"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+-(NSString *) genRandStringLength: (int) len {
+    
+    NSMutableString *randomString = [NSMutableString stringWithCapacity: len];
+    
+    for (int i=0; i<len; i++) {
+        [randomString appendFormat: @"%C", [letters characterAtIndex: arc4random() % [letters length]]];
+    }
+    
+    return randomString;
+}
 
 
 - (void)addWord
 {
-    SKSpriteNode *testNode = [[SKSpriteNode alloc] init];//parent
+    //SKSpriteNode *testNode = [[SKSpriteNode alloc] init];//parent
     SKLabelNode *hello = [SKLabelNode labelNodeWithFontNamed:@"Courier-Bold"];
-    [testNode addChild:hello];
-    testNode.name = @"testNode";
-    hello.text = @"Hello!";
+   // [testNode addChild:hello];
+  //  testNode.name = @"testNode";
+    hello.text = [self genRandStringLength:4];
     hello.fontSize = 20;
-     testNode.position = CGPointMake(skRand(0, self.size.width), self.size.height+100);
-     testNode.physicsBody = [SKPhysicsBody bodyWithRectangleOfSize:hello.frame.size];
- testNode.physicsBody.usesPreciseCollisionDetection = YES;
-    SKAction *getintoposition = [SKAction sequence:@[
-                                                     [SKAction rotateToAngle:(M_PI/rndValue(1.8,2.2)) duration:0]]];
-    [testNode runAction: getintoposition];
+     hello.position = CGPointMake(skRand(0, self.size.width), self.size.height+100);
+     hello.physicsBody = [SKPhysicsBody bodyWithRectangleOfSize:hello.frame.size];
+ hello.physicsBody.usesPreciseCollisionDetection = YES;
+    hello.zRotation = M_PI/rndValue(1.8,2.2);
+//    SKAction *getintoposition = [SKAction sequence:@[
+  //                                                   [SKAction rotateToAngle:(M_PI/rndValue(1.8,2.2)) duration:0]]];
+  //  [hello runAction: getintoposition];
     
-    [self addChild: testNode];
-    testNode.physicsBody.collisionBitMask = rockCategory;
-    testNode.physicsBody.categoryBitMask = rockCategory;
+    [self addChild: hello];
+    hello.physicsBody.collisionBitMask = 0;
+    hello.physicsBody.contactTestBitMask = rockCategory;
+    hello.physicsBody.categoryBitMask = rockCategory;
 }
 
 
@@ -132,45 +145,72 @@ static inline CGFloat rndValue(CGFloat low, CGFloat high) {
 - (void)didBeginContact:(SKPhysicsContact *)contact {
 
     NSLog(@"contact!");
-    if (contact.bodyA.categoryBitMask != contact.bodyB.categoryBitMask){
-        SKPhysicsBody *firstBody, *secondBody;
+    SKPhysicsBody *firstBody, *secondBody;
+
+   if (contact.bodyA.categoryBitMask != contact.bodyB.categoryBitMask){
+       
 
         if (contact.bodyA.categoryBitMask < contact.bodyB.categoryBitMask)
         {
             firstBody = contact.bodyA;
             secondBody = contact.bodyB;
+
+            
         }
         else
         {
             firstBody = contact.bodyB;
             secondBody = contact.bodyA;
+        
+        }
+        
+       // [firstBody.node removeFromParent];
+        firstBody.node.name = @"stuck";
+       // firstBody.node.physicsBody.collisionBitMask = 0;
+       // firstBody.node.physicsBody.contactTestBitMask = 0;
+       // firstBody.node.physicsBody.categoryBitMask = 0;
+       // [secondBody.node addChild:firstBody.node];
+        //secondBody.node.name = @"stuck";
+        //secondBody.node.physicsBody.collisionBitMask = 0;
+        //secondBody.node.physicsBody.contactTestBitMask = 0;
+        //secondBody.node.physicsBody.categoryBitMask = 0;
+    }
+    else {
+           NSLog(@"cool rock on rock");
+        firstBody = contact.bodyB;
+        secondBody = contact.bodyA;
+        firstBody.node.name = @"stuck";
+        secondBody.node.name = @"stuck";
+
+        
+        
         }
 
-
-        [self rock:(SKSpriteNode *) firstBody.node didCollideWithShip:(SKSpriteNode *) secondBody.node];
-        
-    }
 
 }
 
 - (void)rock:(SKSpriteNode *)rock didCollideWithShip:(SKSpriteNode *)ship {
     
    // SKNode *testNode = [self childNodeWithName:@"world"];
-    CGPoint samespot = rock.position;
-    [rock removeFromParent];
-    [ship addChild:rock];
-    rock.physicsBody.contactTestBitMask = rockCategory;
-    rock.physicsBody.categoryBitMask = shipCategory;
-    rock.physicsBody.dynamic = NO;
-    rock.position = samespot;
-    NSLog(@"word on ship contact");
+    CGPoint rockposition = [rock.scene convertPoint:rock.position toNode:ship];
+    CGFloat rockorientation = rock.zRotation;
+    rock.name = @"stuck";
+//[rock removeFromParent];
+//    rock.physicsBody.contactTestBitMask = 0;
+//   rock.physicsBody.categoryBitMask = shipCategory;
+//rock.physicsBody.dynamic = NO;
+ //   rock.position = rockposition;
+ //   rock.zRotation = rockorientation;
+  //  [ship addChild:rock];
+
 
 }
 
 
 - (void)createSceneContents
 {
-    SKSpriteNode *world = [self word2];
+
+    SKLabelNode *world = [self word2];
 
  
     
@@ -191,11 +231,28 @@ static inline CGFloat rndValue(CGFloat low, CGFloat high) {
         if (node.position.y < 0)
             [node removeFromParent];
     }];
+   
 }
+
+
 
 
 -(void)update:(CFTimeInterval)currentTime {
     /* Called before each frame is rendered */
-}
+    SKNode *world = [self childNodeWithName:@"world"];
+
+[self enumerateChildNodesWithName:@"stuck" usingBlock:^(SKNode *node, BOOL *stop) {
+        [node removeFromParent];
+        [world addChild:node];
+        node.physicsBody = [SKPhysicsBody bodyWithRectangleOfSize:CGSizeMake(80,80)];
+        node.physicsBody.categoryBitMask = rockCategory;
+        node.physicsBody.contactTestBitMask = rockCategory;
+        node.physicsBody.dynamic = NO;
+        CGPoint desiredposition = CGPointMake(world.position.x, node.position.y);
+        node.position = [node.scene convertPoint:desiredposition toNode:world];
+        node.zRotation = 2*M_PI;
+          }];
+  
+ }
 
 @end
